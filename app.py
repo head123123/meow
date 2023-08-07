@@ -32,7 +32,7 @@ def handle_message(event):
         about_us_event(event)
         Usage(event)
     
-    if event.message.text == "@小幫手":
+    if message_text == "@即時股價":
         buttons_template = TemplateSendMessage(
         alt_text = "小幫手 template",
         template = ButtonsTemplate(
