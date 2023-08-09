@@ -59,10 +59,12 @@ def handle_message(event):
         stockNumber = msg[5:9]
         btn_msg = stock_reply_other(stockNumber)
         line_bot_api.push_message(uid , btn_msg)
+        line_bot_api.push_message("in2")#
         return 0
     #新增使用者關注的股票到mongodb
     if re.match('關注[0-9]{4}[0-9]',msg):
         stockNumber = msg[2:6]
+        line_bot_api.push_message("in")#
         line_bot_api.push_message(uid,TextSendMessage("加入股票代號"+stockNumber))
         content = write_my_stock(uid,user_name,stockNumber,msg[6:7],msg[7:])
         line_bot_api.push_message(uid,TextSendMessage(content))
@@ -74,10 +76,12 @@ def handle_message(event):
     if (msg.startswith('#')):
         text = msg[1:]
         content =''
+        line_bot_api.push_message("in3")#
     
     if (emsg.startswith('#')):
         text = emsg[1:]
         content =''
+        line_bot_api.push_message("in4")#
 
         stock_rt = twstock.realtime.get(text)
         my_datetime = datetime.datetime.fromtimestamp(stock_rt['timestamp']+8*60*60)
