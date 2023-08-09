@@ -42,7 +42,7 @@ def handle_message(event):
         Usage(event)
 
     # ############"油價查詢"############
-    if message_text == "油價查詢":
+    if message_text == "想知道油價":
         content = oil_price()
         line_bot_api.reply_message(
         event.reply_token, 
