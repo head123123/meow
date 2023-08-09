@@ -1,7 +1,7 @@
 from line_bot_api import *
-from events.basic import *
-from events.oil import *
-from events.msg_template import *
+from .events.basic import *
+from .events.oil import *
+from .events.msg_template import *
 
 from model.mongodb import *
 import re
