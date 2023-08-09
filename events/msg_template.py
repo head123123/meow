@@ -1,7 +1,7 @@
 from line_bot_api import *
 
 def stock_reply_other(stockNumber):
-    content_text = "及時股價和K線圖"
+    content_text = "即時股價和K線圖"
     text_message = TextSendMessage(
                                 text = content_text , 
                                 quick_reply = QuickReply(
