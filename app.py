@@ -1,10 +1,7 @@
 from line_bot_api import *
-from event.basic import *
-from event.oil import *
-from event.Msg_Template import *
-from event.EXRate import *
-
-from model.mongodb import *
+from events.basic import *
+from events.oil import *
+from events.msg_template import *
 import re
 import twstock
 import datetime
@@ -32,9 +29,6 @@ def handle_message(event):
     profile = line_bot_api.get_profile(event.source.user_id)
     uid = profile.user_id
     message_text = str(event.message.text).lower()
-    msg = str(event.message.text).upper().strip()
-    emsg = event.message.text
-    user_name=profile.display_name #使用者名稱
 
     ########### 使用說明 選單 油價查詢 ###########
     if message_text == "@使用說明":
@@ -60,29 +54,11 @@ def handle_message(event):
         stockNumber = msg[5:9]
         btn_msg = stock_reply_other(stockNumber)
         line_bot_api.push_message(uid , btn_msg)
-        line_bot_api.push_message(uid,TextSendMessage("in2"))#
         return 0
-    #新增使用者關注的股票到mongodb
-    if re.match('關注[0-9]{4}[0-9]',msg):
-        stockNumber = msg[2:6]
-        line_bot_api.push_message(uid,TextSendMessage("in"))#
-        line_bot_api.push_message(uid,TextSendMessage("加入股票代號"+stockNumber))
-        content = write_my_stock(uid,user_name,stockNumber,msg[6:7],msg[7:])
-        line_bot_api.push_message(uid,TextSendMessage(content))
-    # else:
-    #     content = write_my_stock(uid,user_name,stockNumber,"未設定","未設定")
-    #     line_bot_api.push_message(uid,TextSendMessage(content))
-        return 0
-    
-    if (msg.startswith('#')):
-        text = msg[1:]
-        content =''
-        line_bot_api.push_message(uid,TextSendMessage("in3"))#
     
     if (emsg.startswith('#')):
         text = emsg[1:]
         content =''
-        line_bot_api.push_message(uid,TextSendMessage("in4"))#
 
         stock_rt = twstock.realtime.get(text)
         my_datetime = datetime.datetime.fromtimestamp(stock_rt['timestamp']+8*60*60)
@@ -115,15 +91,6 @@ def handle_message(event):
             TextSendMessage(text=content)
         )
 
-    #############匯率區###############
-    if re.match("幣別種類",emsg):
-        message = show_Button()
-        line_bot_api.reply_message(event.reply_token,message)
-    
-    if re.match("換匯[A-Z]{3}/[A-Z]{3}/[0-9]", msg):
-        line_bot_api.push_message(uid, TextSendMessage("正在為您計算..."))
-        content = getExchangeRate(msg)
-        line_bot_api.push_message(uid, TextSendMessage(content))
      # ############"@小幫手"############
     if message_text == "@小幫手":
         button_template = ButtonsTemplate()
