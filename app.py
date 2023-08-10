@@ -2,6 +2,7 @@ from line_bot_api import *
 from events.basic import *
 from events.oil import *
 from events.Msg_Template import *
+from events.EXRate import *
 import re
 import twstock
 import datetime
@@ -98,6 +99,11 @@ def handle_message(event):
     if re.match("幣別種類",emsg):
         message = show_Button()
         line_bot_api.reply_message(event.reply_token,message)
+        
+    if re.match("換匯[A-Z]{3}/[A-Z]{3}/[0-9]", msg):
+        line_bot_api.push_message(uid, TextSendMessage("正在為您計算..."))
+        content = getExchangeRate(msg)
+        line_bot_api.push_message(uid, TextSendMessage(content))
      # ############"@小幫手"############
     if message_text == "@小幫手":
         button_template = ButtonsTemplate()
