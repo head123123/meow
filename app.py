@@ -31,7 +31,7 @@ def handle_message(event):
     uid = profile.user_id
     message_text = str(event.message.text).lower()
     msg = str(event.message.text).upper().strip()
-    emsg = event.message.text
+    emsg = event.message.text #同message_text
     user_name=profile.display_name #使用者名稱
 
     ########### 使用說明 選單 油價查詢 ###########
@@ -54,7 +54,7 @@ def handle_message(event):
         )
 
     #股價查詢
-    if re.match("想知道股價[0-9]" , msg):
+    if re.match("想知道股價" , msg):
         stockNumber = msg[5:9]
         btn_msg = stock_reply_other(stockNumber)
         line_bot_api.push_message(uid , btn_msg)
