@@ -68,6 +68,7 @@ def handle_message(event):
     #查詢股票篩選條件清單
     if re.match('股票清單',msg):
         line_bot_api.push_message(uid, TextSendMessage('稍等一下，股票查詢中...'))
+        line_bot_api.push_message(uid, TextSendMessage(user_name))
         content = show_stock_setting(user_name, uid)
         line_bot_api.push_message(uid, TextSendMessage(content))
         return 0
