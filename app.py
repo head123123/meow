@@ -3,50 +3,48 @@ from events.basic import *
 from events.oil import *
 from events.Msg_Template import *
 from events.EXRate import *
-from model.mongodb import *
 import re
 import twstock
 import datetime
+from model.mongodb import *
 
-app = Flask(__name__)
+app= Flask(__name__)
 
-@app.route("/callback", methods=["POST"])
+@app.route("/callback",methods=["POST"])
 def callback():
-    signature = request.headers["X-Line-Signature"]
+    signature= request.headers['X-Line-Signature']
 
-    body = request.get_data(as_text=True)
-    app.logger.info("Request body: " + body)
+    body=request.get_data(as_text=True)
+    app.logger.info("Request body: "+body)
 
 
     try:
-        handler.handle(body, signature)
+        handler.handle(body,signature)
     except InvalidSignatureError:
         abort(400)
 
     return "OK"
 
-# 處理訊息
+#處理訊息
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     profile = line_bot_api.get_profile(event.source.user_id)
-    uid = profile.user_id  # 使用者id
-    user_name = profile.display_name
-    print(user_name)
+    uid = profile.user_id
     message_text = str(event.message.text).lower()
     msg = str(event.message.text).upper().strip()
-    emsg = event.message.text
+    emsg = event.message.text #同message_text
+    user_name=profile.display_name #使用者名稱
 
-    # ############"使用說明"############
+    ########### 使用說明 選單 油價查詢 ###########
     if message_text == "@使用說明":
         about_us_event(event)
         Usage(event)
-
-    # ############"油價查詢"############
-    if message_text == "油價查詢":
+    
+    if event.message.text == "想知道油價":
         content = oil_price()
         line_bot_api.reply_message(
-        event.reply_token, 
-        TextSendMessage(content)
+            event.reply_token,
+            TextSendMessage(text=content)
         )
 
     # ############"股價查詢"############
@@ -56,68 +54,78 @@ def handle_message(event):
         TextSendMessage("請輸入'#' + '股票代號'\n範例：#2330")
         )
 
-    if (emsg.startswith('#')):
-        text = emsg[1:]
-        content = ""
-
-        try:
-            stock_rt = twstock.realtime.get(text)
-        except Exception as e:
-            print(e)
-
-        my_datetime = datetime.datetime.fromtimestamp(stock_rt['timestamp']+8*60*60)
-        my_time = my_datetime.strftime("%H:%M:%S")
-
-        content += f"{stock_rt['info']['name']} ({stock_rt['info']['code']}) {my_time}"
-        content += f"現價: {stock_rt['realtime']['latest_trade_price']} / 開盤: {stock_rt['realtime']['open']}\n"
-        content += f"最高: {stock_rt['realtime']['high']} / 最低: {stock_rt['realtime']['low']}\n"
-        content += f"量: {stock_rt['realtime']['accumulate_trade_volume']}\n"
-
-        stock = twstock.Stock(text)
-
-        content += "-" * 10
-        content += "近日五日價格: \n"
-        price5 = stock.price[-5:][::-1]
-        date5 = stock.date[-5:][::-1]
-        for i in range(len(price5)):
-            content += f"[{date5[i].strftime('%Y-%m-%d')} {price5[i]}]"
-
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=content))
-
-
-    if re.match("想知道股價[0-9]", msg):
-        stockNumber = msg[-4:]
+    #股價查詢
+    if re.match("想知道股價[0-9]" , msg):
+        stockNumber = msg[5:9]
         btn_msg = stock_reply_other(stockNumber)
-        line_bot_api.push_message(uid, btn_msg)
+        line_bot_api.push_message(uid , btn_msg)
         return 0
-    
-    
     if re.match("關注[0-9]{4}[<>][0-9]", msg):
         stockNumber = msg[2:]
         line_bot_api.push_message(uid, TextSendMessage(f"{stockNumber}關注設定中..."))
         content = write_my_stock(uid, user_name, stockNumber, msg[6:7], msg[7:])
         line_bot_api.push_message(uid, TextSendMessage(content))
-    # else:
-    #     content = write_my_stock(uid, user_name, stockNumber, "未設定", "未設定")
-    #     line_bot_api.push_message(uid, TextSendMessage(content))
-    #     return 0
-    
-    # ############"匯率查詢"############
-    if re.match("幣別種類", msg):
-        message = show_Button()
-        line_bot_api.reply_message(event.reply_token, message)
+    #查詢股票篩選條件清單
+    if re.match('股票清單',msg):
+        line_bot_api.push_message(uid, TextSendMessage('稍等一下，股票查詢中...'))
+        content = show_stock_setting(user_name, uid)
+        line_bot_api.push_message(uid, TextSendMessage(content))
+        return 0
+    if (emsg.startswith('#')):
+        text = emsg[1:]
+        content = ''
 
+        stock_rt = twstock.realtime.get(text)
+        my_datetime = datetime.datetime.fromtimestamp(stock_rt['timestamp']+8*60*60)
+        my_time = my_datetime.strftime('%H:%M:%S')
+
+        content +='%s (%s) %s\n' % (
+            stock_rt['info']['name'],
+            stock_rt['info']['code'],
+            my_time)
+        
+        content += '現價: %s / 開盤: %s\n'%(
+            stock_rt['realtime']['latest_trade_price'],
+            stock_rt['realtime']['open'])
+        
+        content += '最高: %s / 最低:%s\n'%(
+            stock_rt['realtime']['high'],
+            stock_rt['realtime']['low'])
+        
+        content += '量: %s\n'%(stock_rt['realtime']['accumulate_trade_volume'])
+
+        stock = twstock.Stock(text)
+        content += '-----\n'
+        content += '最近五日價格: \n'
+        price5 = stock.price[-5:][::-1]
+        date5 = stock.date[-5:][::-1]
+        for i in range(len(price5)):
+            content += '[%s] %s\n' % (date5[i].strftime("%Y-%m-%d"), price5[i])
+        line_bot_api.reply_message(
+            event.reply_token, 
+            TextSendMessage(text=content)
+        )
+
+    #############匯率區###############
+    if re.match("幣別種類",emsg):
+        message = show_Button()
+        line_bot_api.reply_message(event.reply_token,message)
+    if re.match("查詢換匯[A-Z]{3}",msg):
+        msg = msg[4:]
+        content = showCurrency(msg)
+        line_bot_api.push_message(uid,TextSendMessage(content))
     if re.match("換匯[A-Z]{3}/[A-Z]{3}/[0-9]", msg):
         line_bot_api.push_message(uid, TextSendMessage("正在為您計算..."))
         content = getExchangeRate(msg)
         line_bot_api.push_message(uid, TextSendMessage(content))
-
-    # ############"@小幫手"############
+     # ############"@小幫手"############
     if message_text == "@小幫手":
-        button_template = Template_msg()
+        button_template = ButtonsTemplate()
         line_bot_api.reply_message(
         event.reply_token, button_template
         )
+
+        
 
 
 @handler.add(FollowEvent)
