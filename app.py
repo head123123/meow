@@ -10,6 +10,18 @@ from model.mongodb import *
 
 app= Flask(__name__)
 
+#抓使用者關心的股票
+def cache_users_stock():
+    db=constructor_stock()
+    namelist = db.list_collection_names()
+    users = []
+    for i in range(len(namelist)):
+        collect = db[namelist[i]]
+        cel = list(collect.find({"tag":"stock"}))
+        users.append(cel)
+    return users
+
+#監聽所有來自 /callback 的 Post Request
 @app.route("/callback",methods=["POST"])
 def callback():
     signature= request.headers['X-Line-Signature']
@@ -82,60 +94,102 @@ def handle_message(event):
         content = delete_my_allstock(user_name, uid)
         line_bot_api.push_message(uid, TextSendMessage(content))
         return 0
-    
-    if (emsg.startswith('#')):
-        text = emsg[1:]
-        content = ''
+    #######################股價提醒#######################
+    if re.match("股價提醒",msg):
+        import schedule
+        import time
+        def look_stock_price(stock,condition,price,userID):
+            print(userID)
+            url="https://tw.stock.yahoo.com/q/q?s="+stock
+            list_req = requests.get(url)
+            soup = BeautifulSoup(list_req.content,"html.parser")
+            getstock = soup.findAll("b")[1].text
+            content = stock +"當前股市價格為: " + getstock
 
-        stock_rt = twstock.realtime.get(text)
-        my_datetime = datetime.datetime.fromtimestamp(stock_rt['timestamp']+8*60*60)
-        my_time = my_datetime.strftime('%H:%M:%S')
+            if condition == '<' :
+                content += "\n篩選條件為: < "  + price
+                if float(getstock) < float(price):
+                    content += "\n符合" + getstock + "<" + price + "的篩選條件"
+                    line_bot_api.push_message(userID,TextSendMessage(text=content))
+            elif condition ==">":
+                content += "\n篩選條件為: > "  + price
+                if float(getstock) > float(price):
+                    content += "\n符合" + getstock + ">" + price + "的篩選條件"
+                    line_bot_api.push_message(userID,TextSendMessage(text=content))
+            elif condition =="=":
+                content += "\n篩選條件為: = "  + price
+                if float(getstock) == float(price):
+                    content += "\n符合" + getstock + "=" + price + "的篩選條件"
+                    line_bot_api.push_message(userID,TextSendMessage(text=content))
+                
+    def job():
+        print("job OK")
+        dataList = cache_users_stock()
+        for i in range(len(dataList)):
+            for k in range(len(dataList[i])):
+                look_stock_price(dataList[i][k]['favorite_stock'], dataList[i][k]['condition'], dataList[i][k]['price'], dataList[i][k]['userID'])
+        schedule.every(30).seconds.do(job).tag("daily-task-stock"+uid,"second")  #每10秒執行一次
+        # schedule.every().hour.do(job)  #每小時執行一次
+        # schedule.every().day.at("17:19").do(job)  
+        # schedule.every().monday.do(job)  #每周一執行一次
+        # schedule.every().wednesday.at("15:15").do(job)  
+        #無窮迴圈
+        while True:
+            schedule.run_pending()
+            time.sleep(1)
+        if (emsg.startswith('#')):
+            text = emsg[1:]
+            content = ''
 
-        content +='%s (%s) %s\n' % (
-            stock_rt['info']['name'],
-            stock_rt['info']['code'],
-            my_time)
-        
-        content += '現價: %s / 開盤: %s\n'%(
-            stock_rt['realtime']['latest_trade_price'],
-            stock_rt['realtime']['open'])
-        
-        content += '最高: %s / 最低:%s\n'%(
-            stock_rt['realtime']['high'],
-            stock_rt['realtime']['low'])
-        
-        content += '量: %s\n'%(stock_rt['realtime']['accumulate_trade_volume'])
+            stock_rt = twstock.realtime.get(text)
+            my_datetime = datetime.datetime.fromtimestamp(stock_rt['timestamp']+8*60*60)
+            my_time = my_datetime.strftime('%H:%M:%S')
 
-        stock = twstock.Stock(text)
-        content += '-----\n'
-        content += '最近五日價格: \n'
-        price5 = stock.price[-5:][::-1]
-        date5 = stock.date[-5:][::-1]
-        for i in range(len(price5)):
-            content += '[%s] %s\n' % (date5[i].strftime("%Y-%m-%d"), price5[i])
-        line_bot_api.reply_message(
-            event.reply_token, 
-            TextSendMessage(text=content)
-        )
+            content +='%s (%s) %s\n' % (
+                stock_rt['info']['name'],
+                stock_rt['info']['code'],
+                my_time)
+            
+            content += '現價: %s / 開盤: %s\n'%(
+                stock_rt['realtime']['latest_trade_price'],
+                stock_rt['realtime']['open'])
+            
+            content += '最高: %s / 最低:%s\n'%(
+                stock_rt['realtime']['high'],
+                stock_rt['realtime']['low'])
+            
+            content += '量: %s\n'%(stock_rt['realtime']['accumulate_trade_volume'])
 
-    #############匯率區###############
-    if re.match("幣別種類",emsg):
-        message = show_Button()
-        line_bot_api.reply_message(event.reply_token,message)
-    if re.match("查詢換匯[A-Z]{3}",msg):
-        msg = msg[4:]
-        content = showCurrency(msg)
-        line_bot_api.push_message(uid,TextSendMessage(content))
-    if re.match("換匯[A-Z]{3}/[A-Z]{3}/[0-9]", msg):
-        line_bot_api.push_message(uid, TextSendMessage("正在為您計算..."))
-        content = getExchangeRate(msg)
-        line_bot_api.push_message(uid, TextSendMessage(content))
-     # ############"@小幫手"############
-    if message_text == "@小幫手":
-        button_template = ButtonsTemplate()
-        line_bot_api.reply_message(
-        event.reply_token, button_template
-        )
+            stock = twstock.Stock(text)
+            content += '-----\n'
+            content += '最近五日價格: \n'
+            price5 = stock.price[-5:][::-1]
+            date5 = stock.date[-5:][::-1]
+            for i in range(len(price5)):
+                content += '[%s] %s\n' % (date5[i].strftime("%Y-%m-%d"), price5[i])
+            line_bot_api.reply_message(
+                event.reply_token, 
+                TextSendMessage(text=content)
+            )
+
+        #############匯率區###############
+        if re.match("幣別種類",emsg):
+            message = show_Button()
+            line_bot_api.reply_message(event.reply_token,message)
+        if re.match("查詢換匯[A-Z]{3}",msg):
+            msg = msg[4:]
+            content = showCurrency(msg)
+            line_bot_api.push_message(uid,TextSendMessage(content))
+        if re.match("換匯[A-Z]{3}/[A-Z]{3}/[0-9]", msg):
+            line_bot_api.push_message(uid, TextSendMessage("正在為您計算..."))
+            content = getExchangeRate(msg)
+            line_bot_api.push_message(uid, TextSendMessage(content))
+        # ############"@小幫手"############
+        if message_text == "@小幫手":
+            button_template = ButtonsTemplate()
+            line_bot_api.reply_message(
+            event.reply_token, button_template
+            )
 
         
 
