@@ -72,11 +72,12 @@ def handle_message(event):
         btn_msg = stock_reply_other(stockNumber)
         line_bot_api.push_message(uid , btn_msg)
         return 0
-    if re.match("關注[0-9]{4}[<>][0-9]", msg):
-        stockNumber = msg[2:]
-        line_bot_api.push_message(uid, TextSendMessage(f"{stockNumber}關注設定中..."))
-        content = write_my_stock(uid, user_name, stockNumber, msg[6:7], msg[7:])
-        line_bot_api.push_message(uid, TextSendMessage(content))
+    #新增使用者關注的股票到mongodb
+    if re.match("關注[0-9]{4}[<>][0-9]" ,msg):
+        stockNumber =msg[2:6]
+        line_bot_api.push_message(uid,TextSendMessage("加入股票代號"+stockNumber))
+        content =write_my_stock(uid,user_name,stockNumber, msg[6:7], msg[7:])
+        line_bot_api.push_message(uid,TextSendMessage(content))
     #查詢股票篩選條件清單
     if re.match('股票清單',msg):
         line_bot_api.push_message(uid, TextSendMessage('稍等一下，股票查詢中...'))
