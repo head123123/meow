@@ -1,5 +1,5 @@
 import requests
-
+import twder
 def getCurrencyName(currency):
     currency_list = { 
         "USD" : "美元",
@@ -42,4 +42,18 @@ def getExchangeRate(msg):
     content = f'目前的兌換率為：{pd_currency[currency1]} {currency1} \n查詢的金額為：'
     amount = float(pd_currency[currency1])
     content += str('%.2f' % (amount * float(money_value))) + " " + currency1
+    return content
+
+def showCurrency(code) -> "JPY":
+    content = ''
+    currency_name = getCurrencyName(code)
+    if currency_name == '無可支援的外幣': return'無可支援的外幣'
+    
+    currency = twder.now(code)
+    now_time = str(currency[0])
+    buying_cash = '無資料' if currency[1] == '-' else str(float(currency[1]))
+    sold_cash = '無資料' if currency[2] == '-' else str(float(currency[2]))
+    buying_spot = '無資料' if currency[3] == '-' else str(float(currency[3]))
+    sold_spot = '無資料' if currency[4] == '-' else str(float(currency[4]))
+    content +=  f"{currency_name} 最新掛牌時間為: {now_time}\n ---------- \n 現金買入價格: {buying_cash}\n 現金賣出價格: {sold_cash}\n 即期買入價格: {buying_spot}\n 即期賣出價格: {sold_spot}\n \n"
     return content
