@@ -143,7 +143,7 @@ def handle_message(event):
         content = getExchangeRate(msg)
         line_bot_api.push_message(uid, TextSendMessage(content))
         #######################股價提醒#######################
-    if re.match("關閉提醒", msg):
+    if re.match("關閉提醒",msg):
         import schedule
         schedule.clear()
     if re.match("股價提醒", msg):
@@ -181,7 +181,7 @@ def handle_message(event):
                 for k in range(len(dataList[i])):
                     # print(dataList[i][k])
                     look_stock_price(dataList[i][k]['favorite_stock'], dataList[i][k]['condition'], dataList[i][k]['price'], dataList[i][k]['userID'])
-        schedule.every(10).seconds.do(job).tag('daily-tasks-stock'+uid,'second') #每10秒執行一次
+        schedule.every(5).seconds.do(job).tag('daily-tasks-stock'+uid,'second') #每10秒執行一次
         #schedule.every().hour.do(job) #每小時執行一次
         #schedule.every().day.at("17:19").do(job) #每天9點30執行一次
         #schedule.every().monday.do(job) #每週一執行一次
