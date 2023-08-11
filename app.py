@@ -94,7 +94,55 @@ def handle_message(event):
         content = delete_my_allstock(user_name, uid)
         line_bot_api.push_message(uid, TextSendMessage(content))
         return 0
-    #######################股價提醒#######################
+    
+    if (emsg.startswith('#')):
+        text = emsg[1:]
+        content = ''
+
+        stock_rt = twstock.realtime.get(text)
+        my_datetime = datetime.datetime.fromtimestamp(stock_rt['timestamp']+8*60*60)
+        my_time = my_datetime.strftime('%H:%M:%S')
+
+        content +='%s (%s) %s\n' % (
+            stock_rt['info']['name'],
+            stock_rt['info']['code'],
+            my_time)
+        
+        content += '現價: %s / 開盤: %s\n'%(
+            stock_rt['realtime']['latest_trade_price'],
+            stock_rt['realtime']['open'])
+        
+        content += '最高: %s / 最低:%s\n'%(
+            stock_rt['realtime']['high'],
+            stock_rt['realtime']['low'])
+        
+        content += '量: %s\n'%(stock_rt['realtime']['accumulate_trade_volume'])
+
+        stock = twstock.Stock(text)
+        content += '-----\n'
+        content += '最近五日價格: \n'
+        price5 = stock.price[-5:][::-1]
+        date5 = stock.date[-5:][::-1]
+        for i in range(len(price5)):
+            content += '[%s] %s\n' % (date5[i].strftime("%Y-%m-%d"), price5[i])
+        line_bot_api.reply_message(
+            event.reply_token, 
+            TextSendMessage(text=content)
+        )
+
+    #############匯率區###############
+    if re.match("幣別種類",emsg):
+        message = show_Button()
+        line_bot_api.reply_message(event.reply_token,message)
+    if re.match("查詢換匯[A-Z]{3}",msg):
+        msg = msg[4:]
+        content = showCurrency(msg)
+        line_bot_api.push_message(uid,TextSendMessage(content))
+    if re.match("換匯[A-Z]{3}/[A-Z]{3}/[0-9]", msg):
+        line_bot_api.push_message(uid, TextSendMessage("正在為您計算..."))
+        content = getExchangeRate(msg)
+        line_bot_api.push_message(uid, TextSendMessage(content))
+        #######################股價提醒#######################
     if re.match("股價提醒", msg):
         import schedule
         import time
@@ -138,59 +186,12 @@ def handle_message(event):
         while True: 
             schedule.run_pending()
             time.sleep(1)
-        if (emsg.startswith('#')):
-            text = emsg[1:]
-            content = ''
-
-            stock_rt = twstock.realtime.get(text)
-            my_datetime = datetime.datetime.fromtimestamp(stock_rt['timestamp']+8*60*60)
-            my_time = my_datetime.strftime('%H:%M:%S')
-
-            content +='%s (%s) %s\n' % (
-                stock_rt['info']['name'],
-                stock_rt['info']['code'],
-                my_time)
-            
-            content += '現價: %s / 開盤: %s\n'%(
-                stock_rt['realtime']['latest_trade_price'],
-                stock_rt['realtime']['open'])
-            
-            content += '最高: %s / 最低:%s\n'%(
-                stock_rt['realtime']['high'],
-                stock_rt['realtime']['low'])
-            
-            content += '量: %s\n'%(stock_rt['realtime']['accumulate_trade_volume'])
-
-            stock = twstock.Stock(text)
-            content += '-----\n'
-            content += '最近五日價格: \n'
-            price5 = stock.price[-5:][::-1]
-            date5 = stock.date[-5:][::-1]
-            for i in range(len(price5)):
-                content += '[%s] %s\n' % (date5[i].strftime("%Y-%m-%d"), price5[i])
-            line_bot_api.reply_message(
-                event.reply_token, 
-                TextSendMessage(text=content)
-            )
-
-        #############匯率區###############
-        if re.match("幣別種類",emsg):
-            message = show_Button()
-            line_bot_api.reply_message(event.reply_token,message)
-        if re.match("查詢換匯[A-Z]{3}",msg):
-            msg = msg[4:]
-            content = showCurrency(msg)
-            line_bot_api.push_message(uid,TextSendMessage(content))
-        if re.match("換匯[A-Z]{3}/[A-Z]{3}/[0-9]", msg):
-            line_bot_api.push_message(uid, TextSendMessage("正在為您計算..."))
-            content = getExchangeRate(msg)
-            line_bot_api.push_message(uid, TextSendMessage(content))
-        # ############"@小幫手"############
-        if message_text == "@小幫手":
-            button_template = ButtonsTemplate()
-            line_bot_api.reply_message(
-            event.reply_token, button_template
-            )
+    # ############"@小幫手"############
+    if message_text == "@小幫手":
+        button_template = ButtonsTemplate()
+        line_bot_api.reply_message(
+        event.reply_token, button_template
+        )
 
         
 
