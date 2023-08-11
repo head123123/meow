@@ -99,7 +99,7 @@ def handle_message(event):
     if re.match("幣別種類",emsg):
         message = show_Button()
         line_bot_api.reply_message(event.reply_token,message)
-    if re.match("換匯[A-Z]{3}",msg):
+    if re.match("查詢換匯[A-Z]{3}",msg):
         msg = msg[4:]
         content = showCurrency(msg)
         line_bot_api.push_message(uid,TextSendMessage(content))
