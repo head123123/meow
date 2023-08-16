@@ -4,3 +4,4 @@ opencv-python==3.4.3.18
 paho-mqtt==1.6.1
 numpy==1.19.5
 pillow==9.5.0
+gunicorn==19.7.1
