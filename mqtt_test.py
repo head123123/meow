@@ -69,7 +69,8 @@ if __name__ == "__main__":
 
     # 等待兩個執行緒結束
     thread1.join()
-    thread2.join()import paho.mqtt.client as mqtt
+    thread2.join()
+import paho.mqtt.client as mqtt
 import matplotlib.pyplot as plt
 import threading
 
