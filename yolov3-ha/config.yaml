@@ -1,0 +1,13 @@
+cvconf:
+    video: rtsp://av2288444:t0955787053S@192.168.1.109:554/stream1
+    plugin: hacv.CVMQTTPlugin
+
+hacv:
+    host: 192.168.1.107
+#    host: 127.0.0.1
+    name: tensorflow
+    username: mqtt_user
+    password: t0955787053S
+    mqtt_motion: ha/motion/mqtt
+    mqtt_camera: ha/camera/mqtt
+    mqtt_tts: ha/tts/mqtt

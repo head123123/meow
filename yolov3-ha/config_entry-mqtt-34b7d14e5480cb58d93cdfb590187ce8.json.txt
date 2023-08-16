@@ -1,0 +1,77 @@
+{
+  "home_assistant": {
+    "installation_type": "Home Assistant OS",
+    "version": "2023.8.1",
+    "dev": false,
+    "hassio": true,
+    "virtualenv": false,
+    "python_version": "3.11.4",
+    "docker": true,
+    "arch": "x86_64",
+    "timezone": "Asia/Taipei",
+    "os_name": "Linux",
+    "os_version": "6.1.39",
+    "supervisor": "2023.07.1",
+    "host_os": "Home Assistant OS 10.4",
+    "docker_version": "23.0.6",
+    "chassis": "vm",
+    "run_as_root": true
+  },
+  "custom_components": {
+    "hacs": {
+      "version": "1.32.1",
+      "requirements": [
+        "aiogithubapi>=22.10.1"
+      ]
+    },
+    "xiaomi_miot": {
+      "version": "0.7.10",
+      "requirements": [
+        "construct==2.10.56",
+        "python-miio>=0.5.6",
+        "micloud>=0.3"
+      ]
+    },
+    "jcihitachi_tw": {
+      "version": "1.4.0",
+      "requirements": [
+        "LibJciHitachi==1.3.0"
+      ]
+    }
+  },
+  "integration_manifest": {
+    "domain": "mqtt",
+    "name": "MQTT",
+    "codeowners": [
+      "@emontnemery",
+      "@jbouwh"
+    ],
+    "config_flow": true,
+    "dependencies": [
+      "file_upload",
+      "http"
+    ],
+    "documentation": "https://www.home-assistant.io/integrations/mqtt",
+    "iot_class": "local_push",
+    "quality_scale": "gold",
+    "requirements": [
+      "paho-mqtt==1.6.1"
+    ],
+    "is_built_in": true
+  },
+  "data": {
+    "connected": true,
+    "mqtt_config": {
+      "broker": "192.168.1.106",
+      "port": 1883,
+      "username": "**REDACTED**",
+      "password": "**REDACTED**",
+      "discovery": true
+    },
+    "devices": [],
+    "mqtt_debug_info": {
+      "entities": [],
+      "triggers": []
+    }
+  }
+}
